@@ -1,4 +1,5 @@
 using AuctionService.DTOs;
+using AuctionService.Entities;
 using AuctionService.Persistence;
 using Microsoft.AspNetCore.Http.HttpResults;
 
@@ -13,6 +14,12 @@ public static class AuctionsEndpoint
         auctions.MapGet("/", GetAuctionsAsync);
 
         auctions.MapGet("/{id:guid}", GetAuctionAsync);
+
+        auctions.MapPost("/", CreateAuctionAsync);
+
+        auctions.MapPut("/", UpdateAuctionAsync);
+
+        auctions.MapDelete("/{id:guid}", DeleteAuctionAsync);
     }
 
     private static async Task<Ok<List<AuctionDto>>> GetAuctionsAsync(AuctionDbContext context, CancellationToken cancellationToken)
@@ -36,6 +43,73 @@ public static class AuctionsEndpoint
         if (auction is null)
         {
             return TypedResults.NotFound();
+        }
+
+        return TypedResults.Ok(auction.Adapt<AuctionDto>());
+    }
+
+    private static async Task<Results<Created<AuctionDto>, BadRequest<string>>> CreateAuctionAsync(
+        AuctionDto auctionDto,
+        AuctionDbContext context,
+        CancellationToken cancellationToken)
+    {
+        var auction = auctionDto.Adapt<Auction>();
+
+        context.Auctions.Add(auction);
+        var result = await context.SaveChangesAsync(cancellationToken) > 0;
+
+        if (!result)
+        {
+            return TypedResults.BadRequest("Failed to create auction");
+        }
+
+        return TypedResults.Created($"/api/auctions/{auction.Id}", auction.Adapt<AuctionDto>());
+    }
+
+    private static async Task<Results<Ok<AuctionDto>, NotFound, BadRequest<string>>> UpdateAuctionAsync(
+        UpdateAuctionDto auctionDto,
+        AuctionDbContext context,
+        CancellationToken cancellationToken)
+    {
+        var auction = await context.Auctions
+            .FirstOrDefaultAsync(x => x.Id == auctionDto.Id, cancellationToken);
+
+        if (auction is null)
+        {
+            return TypedResults.NotFound();
+        }
+
+        auctionDto.Adapt(auction);
+
+        var result = await context.SaveChangesAsync(cancellationToken) > 0;
+
+        if (!result)
+        {
+            return TypedResults.BadRequest("Failed to update auction");
+        }
+
+        return TypedResults.Ok(auction.Adapt<AuctionDto>());
+    }
+
+    private static async Task<Results<Ok<AuctionDto>, NotFound, BadRequest<string>>> DeleteAuctionAsync(
+        Guid id,
+        AuctionDbContext context,
+        CancellationToken cancellationToken)
+    {
+        var auction = await context.Auctions
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+        if (auction is null)
+        {
+            return TypedResults.NotFound();
+        }
+
+        context.Auctions.Remove(auction);
+        var result = await context.SaveChangesAsync(cancellationToken) > 0;
+
+        if (!result)
+        {
+            return TypedResults.BadRequest("Failed to delete auction");
         }
 
         return TypedResults.Ok(auction.Adapt<AuctionDto>());

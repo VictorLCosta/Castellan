@@ -21,6 +21,15 @@ services:
     volumes:
       - mongodata:/data/db
 
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - "15672:15672"  # RabbitMQ management UI
+      - "5672:5672"    # RabbitMQ messaging
+    environment:
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: password
+
 volumes:
   pgdata:
     driver: local

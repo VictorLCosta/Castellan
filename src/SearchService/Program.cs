@@ -1,6 +1,7 @@
 using System.Reflection;
 using MassTransit;
 using Scalar.AspNetCore;
+using SearchService.Consumers;
 using SearchService.Endpoints;
 using SearchService.Persistence;
 
@@ -16,6 +17,20 @@ builder.Services.AddMassTransit(x =>
 
     x.UsingRabbitMq((context, cfg) =>
     {
+
+        cfg.Host(builder.Configuration["RabbitMq:Host"], "/", h =>
+        {
+            h.Username(builder.Configuration.GetValue("RabbitMq:Username", "user"));
+            h.Password(builder.Configuration.GetValue("RabbitMq:Password", "password"));
+        });
+
+        cfg.ReceiveEndpoint("search-auction-created", e =>
+        {
+            e.UseMessageRetry(r => r.Interval(5, TimeSpan.FromSeconds(5)));
+
+            e.ConfigureConsumer<AuctionCreatedConsumer>(context);
+        });
+
         cfg.ConfigureEndpoints(context);
     });
 });

@@ -1,6 +1,8 @@
 using AuctionService.DTOs;
 using AuctionService.Entities;
 using AuctionService.Persistence;
+using Contracts;
+using MassTransit;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace AuctionService.Endpoints;
@@ -49,8 +51,9 @@ public static class AuctionsEndpoint
     }
 
     private static async Task<Results<Created<AuctionDto>, BadRequest<string>>> CreateAuctionAsync(
-        AuctionDto auctionDto,
+        CreateAuctionDto auctionDto,
         AuctionDbContext context,
+        IPublishEndpoint publishEndpoint,
         CancellationToken cancellationToken)
     {
         var auction = auctionDto.Adapt<Auction>();
@@ -62,6 +65,8 @@ public static class AuctionsEndpoint
         {
             return TypedResults.BadRequest("Failed to create auction");
         }
+
+        await publishEndpoint.Publish(auction.Adapt<AuctionCreated>(), cancellationToken);
 
         return TypedResults.Created($"/api/auctions/{auction.Id}", auction.Adapt<AuctionDto>());
     }

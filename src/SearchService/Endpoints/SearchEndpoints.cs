@@ -14,7 +14,7 @@ public static class SearchEndpoints
         group.MapGet("/", SearchItemsAsync);
     }
 
-    private static async Task<Ok<List<Item>>> SearchItemsAsync([FromQuery] SearchParams searchParams)
+    private static async Task<Ok<List<Item>>> SearchItemsAsync([AsParameters] SearchParams searchParams)
     {
         var query = DB
             .Find<Item>()

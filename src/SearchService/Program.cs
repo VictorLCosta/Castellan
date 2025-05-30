@@ -1,4 +1,3 @@
-using System.Reflection;
 using MassTransit;
 using Scalar.AspNetCore;
 using SearchService.Consumers;
@@ -11,7 +10,7 @@ builder.Services.AddOpenApi();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddMassTransit(x =>
 {
-    x.AddConsumers(Assembly.GetExecutingAssembly());
+    x.AddConsumersFromNamespaceContaining<AuctionCreatedConsumer>();
 
     x.SetEndpointNameFormatter(new KebabCaseEndpointNameFormatter("search", false));
 

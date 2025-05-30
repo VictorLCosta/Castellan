@@ -1,12 +1,13 @@
 using AuctionService.Entities;
 using Bogus;
-using Microsoft.EntityFrameworkCore;
+using Contracts;
 
 namespace AuctionService.Persistence;
 
-public class AuctionDbContextInitialiaser(AuctionDbContext context)
+public class AuctionDbContextInitialiaser(AuctionDbContext context, IPublishEndpoint publish)
 {
     private readonly AuctionDbContext _context = context;
+    private readonly IPublishEndpoint _publish = publish;
 
     public async Task InitialiseAsync(CancellationToken cancellationToken)
     {
@@ -58,7 +59,15 @@ public class AuctionDbContextInitialiaser(AuctionDbContext context)
 
             await _context.Auctions.AddRangeAsync(auctions, cancellationToken);
 
-            await _context.SaveChangesAsync(cancellationToken);
+            var result = await _context.SaveChangesAsync(cancellationToken) > 0;
+
+            if (result)
+            {
+                foreach (var auction in auctions)
+                {
+                    await _publish.Publish(auction.Adapt<AuctionCreated>(), cancellationToken);
+                }
+            }
         }
     }
 }

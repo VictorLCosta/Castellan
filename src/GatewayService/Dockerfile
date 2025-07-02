@@ -1,7 +1,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /app
 
-COPY Carsties.sln ./
+COPY Castellan.sln ./
 COPY src/GatewayService/GatewayService.csproj ./src/GatewayService/
 
 RUN dotnet restore ./src/GatewayService/GatewayService.csproj
